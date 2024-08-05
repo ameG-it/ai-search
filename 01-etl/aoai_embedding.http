@@ -1,0 +1,6 @@
+POST https://{{$dotenv AZURE_OPENAI_INSTANCE_NAME}}.openai.azure.com/openai/deployments/{{$dotenv AZURE_OPENAI_EMBED_DEPLOYMENT_NAME}}/completions?api-version={{$dotenv AZURE_OPENAI_EMBED_API_VERSION}}
+Content-Type: application/json
+api-key: {{$dotenv AZURE_OPENAI_API_KEY}}
+
+{"input":"hello World"}
+
