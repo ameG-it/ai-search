@@ -1,4 +1,5 @@
 console.log("処理開始");
+const { OpenAIEmbeddings } = require("@langchain/openai");
 const { PdfReader } = require("./pdfreader.js");
 const { TokenTextSplitter } = require("langchain/text_splitter");
 
@@ -32,7 +33,21 @@ async function transform(item) {
   });
   const chunks = await splitter.splitText(item.text);
 
-  data.push(...chunks);
+  // chunk into vector
+  const embeddings = new OpenAIEmbeddings({
+    azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+    azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_INSTANCE_NAME,
+    azureOpenAIApiDeploymentName:
+      process.env.AZURE_OPENAI_EMBED_DEPLOYMENT_NAME,
+    azureOpenAIApiVersion: process.env.AZURE_OPENAI_EMBED_API_VERSION,
+  });
+
+  for (let chunk of chunks) {
+    const vector = await embeddings.embedQuery(chunk);
+    data.push(vector);
+  }
+
+  //  data.push(...chunks);
 
   return data;
 }
