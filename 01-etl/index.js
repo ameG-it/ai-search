@@ -1,6 +1,7 @@
 console.log("処理開始");
 const { OpenAIEmbeddings } = require("@langchain/openai");
 const { PdfReader } = require("./pdfreader.js");
+const { v4: uuid } = require("uuid");
 const { TokenTextSplitter } = require("langchain/text_splitter");
 
 async function extract() {
@@ -44,7 +45,12 @@ async function transform(item) {
 
   for (let chunk of chunks) {
     const vector = await embeddings.embedQuery(chunk);
-    data.push(vector);
+    data.push({
+      id: uuid(),
+      title: item.title,
+      content: chunk,
+      contentVector: vector,
+    });
   }
 
   //  data.push(...chunks);
@@ -60,8 +66,8 @@ async function transform(item) {
   const outdata = [];
   for (let source of indata) {
     const target = await transform(source);
-    outdata.push(target);
+    outdata.push(...target);
   }
 
-  console.log(JSON.stringify(outdata));
+  console.log(JSON.stringify(outdata, null, 2));
 })();
