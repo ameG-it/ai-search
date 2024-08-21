@@ -9,6 +9,7 @@
   "author": "amegit",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.7.4",
     "langchain": "^0.2.12",
     "pdfreader": "^3.0.3",
     "uuid": "^10.0.0"

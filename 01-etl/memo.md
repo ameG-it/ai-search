@@ -54,3 +54,9 @@ OpenAIEmbeddings クラスを使用する。
 ### Transform(変換)
 
 ### Load(書き込み)
+
+### インデックスの作成
+
+https://learn.microsoft.com/ja-jp/azure/search/search-get-started-vector?tabs=azure-cli
+
+### データ登録

@@ -3,10 +3,11 @@ const { OpenAIEmbeddings } = require("@langchain/openai");
 const { PdfReader } = require("./pdfreader.js");
 const { v4: uuid } = require("uuid");
 const { TokenTextSplitter } = require("langchain/text_splitter");
+const axios = require("axios");
 
 async function extract() {
-  const FILE_NAME = "./data/sample.pdf";
-  const FILE_PATH = "./data/sample.pdf";
+  const FILE_NAME = "xxx";
+  const FILE_PATH = "./data/xxx";
 
   return new Promise((resolve, reject) => {
     const data = [];
@@ -29,8 +30,8 @@ async function transform(item) {
   const data = [];
   const splitter = new TokenTextSplitter({
     encodingName: "cl100k_base",
-    chunkSize: 10,
-    chunkOverlap: 1,
+    chunkSize: 2000,
+    chunkOverlap: 200,
   });
   const chunks = await splitter.splitText(item.text);
 
@@ -43,31 +44,71 @@ async function transform(item) {
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_EMBED_API_VERSION,
   });
 
+  // Promise.all(chunks.map((chunk) => embeddings.embedQuery(chunk))).then(
+  //   (vectors) => {
+  //     console.log("chunk", chunk);
+
+  //     console.log("vectors", vectors);
+  //     data.push({
+  //       id: uuid(),
+  //       title: `${item.title} - Page ${item.pageNumber}`,
+  //       content: chunk,
+  //       contentVector: vector,
+  //     });
+  //   }
+  // );
+
   for (let chunk of chunks) {
     const vector = await embeddings.embedQuery(chunk);
     data.push({
       id: uuid(),
-      title: item.title,
+      title: `${item.title} - Page ${item.pageNumber}`,
       content: chunk,
       contentVector: vector,
     });
   }
 
-  //  data.push(...chunks);
-
   return data;
+}
+
+async function load(documents) {
+  const BASE_URL = process.env.AZURE_AISEARCH_BASE_URL;
+  const ADMIN_KEY = process.env.AZURE_AISEARCH_ADMIN_KEY;
+  const INDEX_NAME = process.env.AZURE_AISEARCH_INDEX_NAME;
+
+  const url = new URL(BASE_URL);
+  url.pathname = `/indexes/${INDEX_NAME}/docs/index`;
+  url.searchParams.append("api-version", "2023-11-01");
+
+  const res = await axios({
+    method: "POST",
+    url: url.toString(),
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": ADMIN_KEY,
+    },
+    data: {
+      value: documents,
+    },
+  });
 }
 
 (async () => {
   // Extract
+  console.log("Extracting...");
   const indata = await extract();
 
-  //Transform
+  // Transform
+  console.log("Transforming...");
   const outdata = [];
   for (let source of indata) {
     const target = await transform(source);
     outdata.push(...target);
   }
 
-  console.log(JSON.stringify(outdata, null, 2));
+  // Load
+  console.log("Loading...");
+  await load(outdata);
+
+  console.log("Done!");
 })();
